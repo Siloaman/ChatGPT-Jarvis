@@ -1,0 +1,59 @@
+If you’re using Maven, add the following dependency in your pom.xml to make HTTP requests:
+xml
+
+<dependency>
+  <groupId>com.squareup.okhttp3</groupId>
+  <artifactId>okhttp</artifactId>
+  <version>4.9.3</version>
+</dependency>
+
+
+
+
+import okhttp3.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+public class OpenAIChatGPT {
+
+    // Set your OpenAI API key here
+    private static final String API_KEY = "your-api-key";
+    private static final String API_URL = "https://api.openai.com/v1/chat/completions";
+
+    public static void main(String[] args) throws IOException {
+        String prompt = "Good morning! How can I help you today?";
+
+        // Build the request body
+        JSONObject jsonBody = new JSONObject();
+        jsonBody.put("model", "gpt-4");
+        JSONArray messages = new JSONArray();
+        messages.put(new JSONObject().put("role", "system").put("content", "You are ChatGPT."));
+        messages.put(new JSONObject().put("role", "user").put("content", prompt));
+        jsonBody.put("messages", messages);
+
+        // Create a request using OkHttp
+        OkHttpClient client = new OkHttpClient();
+        RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.parse("application/json"));
+        Request request = new Request.Builder()
+                .url(API_URL)
+                .post(body)
+                .addHeader("Authorization", "Bearer " + API_KEY)
+                .build();
+
+        // Execute the request and handle the response
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Unexpected code " + response);
+            }
+
+            String responseBody = response.body().string();
+            JSONObject jsonResponse = new JSONObject(responseBody);
+            String reply = jsonResponse.getJSONArray("choices").getJSONObject(0)
+                    .getJSONObject("message").getString("content");
+            System.out.println("ChatGPT: " + reply);
+        }
+    }
+}
+
